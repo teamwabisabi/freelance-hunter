@@ -12,8 +12,8 @@ load_dotenv()
 def get_client() -> Client:
     url = os.environ["SUPABASE_URL"]
     key = os.environ["SUPABASE_KEY"]
-    print("SUPABASE_URL set:", bool(os.environ.get("SUPABASE_URL")))
-    print("SUPABASE_KEY set:", bool(os.environ.get("SUPABASE_KEY")))
+    print("SUPABASE_URL set:", os.environ.get("SUPABASE_URL"))
+    print("SUPABASE_KEY set:", os.environ.get("SUPABASE_KEY"))
     return create_client(url, key)
 
 
