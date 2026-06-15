@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Outreach — Freelance Hunter{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 class="mt-4">Direct Outreach</h1>
+    <p class="text-muted mb-2">Proactive emails to companies you want to approach</p>
+
+    {% if drafts %}
+    <div class="section-title mt-6">Ready to review ({{ drafts|length }})</div>
+    {% for target in drafts %}
+    <div class="card">
+        <div class="flex justify-between items-center mb-2">
+            <div>
+                <h3>{{ target.company_name }}</h3>
+                <p class="text-muted">{{ target.sector }}{% if target.contact_name %} · {{ target.contact_name }}{% endif %}</p>
+            </div>
+            <span class="badge badge-yellow">draft ready</span>
+        </div>
+        
+        <form method="post" action="/dashboard/outreach/{{ target.id }}/approve">
+            <div class="mb-2">
+                <label for="email_{{ target.id }}">Draft email (edit before approving)</label>
+                <textarea name="edited_email" id="email_{{ target.id }}" rows="12"
+                          style="font-size:13px; line-height:1.6; font-family:monospace;">{{ target.draft_email or '' }}</textarea>
+            </div>
+            <div class="flex gap-2 mt-2">
+                <button type="submit" class="btn btn-green">✓ Approve</button>
+            </div>
+        </form>
+        
+        <form method="post" action="/dashboard/outreach/{{ target.id }}/skip" style="display:inline;">
+            <button type="submit" class="btn btn-gray mt-2" 
+                    onclick="return confirm('Skip {{ target.company_name }}?')">✗ Skip</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card empty mt-4">
+        <div style="font-size:40px; margin-bottom:12px;">📬</div>
+        <p>No outreach drafts pending.</p>
+        <p style="margin-top:6px; font-size:12px;">Add companies to outreach_targets.csv and run the pipeline.</p>
+    </div>
+    {% endif %}
+
+    {% if contacted %}
+    <div class="section-title mt-6">Already contacted ({{ contacted|length }})</div>
+    {% for target in contacted %}
+    <div class="card" style="padding:14px 20px;">
+        <div class="flex justify-between items-center">
+            <div>
+                <p style="font-size:14px; font-weight:500;">{{ target.company_name }}</p>
+                <p class="text-muted">{{ target.sector }}</p>
+            </div>
+            <span class="badge badge-blue">contacted</span>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} — Freelance Hunter{% endblock %}
+{% block content %}
+<div class="container">
+    <a href="/dashboard" class="text-muted" style="font-size:14px; text-decoration:none;">← Back to dashboard</a>
+    
+    <div class="flex gap-3 items-center mt-4 mb-2">
+        {% set score = listing.match_score or 0 %}
+        <div class="score {% if score >= 8 %}score-high{% elif score >= 6 %}score-mid{% else %}score-low{% endif %}">
+            {{ score }}
+        </div>
+        <div>
+            <h1 style="font-size:20px;">{{ listing.title }}</h1>
+            <p class="text-muted">{{ listing.company or '—' }} · {{ listing.location or 'Belgium' }} · {{ listing.source }}</p>
+        </div>
+    </div>
+
+    {% if listing.url %}
+    <a href="{{ listing.url }}" target="_blank" class="btn btn-gray mb-2" style="font-size:13px;">View original posting ↗</a>
+    {% endif %}
+
+    <!-- Match Analysis -->
+    <div class="card mt-4">
+        <div class="section-title">Claude's Analysis</div>
+        
+        <div class="mb-2">
+            <label>Match reasoning</label>
+            <p style="font-size:14px; color:#374151;">{{ listing.match_reasoning }}</p>
+        </div>
+        
+        <div class="mb-2 mt-4">
+            <label>Most relevant experiences</label>
+            <p style="font-size:14px; color:#374151;">{{ listing.relevant_experiences }}</p>
+        </div>
+        
+        {% if listing.concerns and listing.concerns != 'None' %}
+        <div class="mb-2 mt-4">
+            <label>Concerns / gaps</label>
+            <p style="font-size:14px; color:#dc2626;">{{ listing.concerns }}</p>
+        </div>
+        {% endif %}
+        
+        <div class="mt-4">
+            <label>Recommended CV variant</label>
+            <span class="badge badge-blue">{{ listing.recommended_cv_variant }}</span>
+        </div>
+    </div>
+
+    <!-- Job description -->
+    {% if listing.description %}
+    <div class="card mt-4">
+        <div class="section-title">Job Description</div>
+        <p style="font-size:14px; color:#374151; white-space:pre-wrap; line-height:1.6;">{{ listing.description[:2000] }}{% if listing.description|length > 2000 %}…{% endif %}</p>
+    </div>
+    {% endif %}
+
+    <!-- Decision form -->
+    {% if listing.status == 'pending' %}
+    <div class="card mt-4">
+        <div class="section-title">Your Application</div>
+        
+        <form method="post" action="/dashboard/listing/{{ listing.id }}/decide">
+            <div class="mb-2">
+                <label for="edited_cover_letter">Cover letter / motivation (edit before approving)</label>
+                <textarea name="edited_cover_letter" id="edited_cover_letter" rows="14" 
+                          style="font-size:13px; line-height:1.6;">{{ listing.draft_cover_letter or '' }}</textarea>
+            </div>
+            
+            <div class="mb-2 mt-4">
+                <label for="your_notes">Your notes (private, not sent)</label>
+                <textarea name="your_notes" id="your_notes" rows="3" 
+                          placeholder="e.g. follow up with contact, ask about remote policy…"></textarea>
+            </div>
+            
+            <div class="flex gap-2 mt-4">
+                <button type="submit" name="action" value="approved" class="btn btn-green">
+                    ✓ Approve & mark for submission
+                </button>
+                <button type="submit" name="action" value="saved" class="btn btn-primary">
+                    ⊙ Save for later
+                </button>
+                <button type="submit" name="action" value="skipped" class="btn btn-gray"
+                        onclick="return confirm('Skip this listing?')">
+                    ✗ Skip
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="card mt-4">
+        <div class="section-title">Decision</div>
+        <p>Status: <strong>{{ listing.status }}</strong></p>
+        {% if listing.edited_cover_letter %}
+        <div class="mt-4">
+            <label>Your edited cover letter</label>
+            <p style="font-size:14px; white-space:pre-wrap; line-height:1.6; color:#374151;">{{ listing.edited_cover_letter }}</p>
+        </div>
+        {% endif %}
+        {% if listing.your_notes %}
+        <div class="mt-4">
+            <label>Your notes</label>
+            <p style="font-size:14px; color:#374151;">{{ listing.your_notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Freelance Hunter{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            color: #111827;
+            min-height: 100vh;
+        }
+        nav {
+            background: #1e293b;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            height: 56px;
+        }
+        nav .brand { color: white; font-weight: 700; font-size: 16px; text-decoration: none; }
+        nav a { color: #94a3b8; text-decoration: none; font-size: 14px; }
+        nav a:hover { color: white; }
+        nav .spacer { flex: 1; }
+        .container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-yellow { background: #fef9c3; color: #854d0e; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .score {
+            font-size: 20px;
+            font-weight: 700;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .score-high { background: #22c55e; color: white; }
+        .score-mid { background: #f59e0b; color: white; }
+        .score-low { background: #ef4444; color: white; }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: #1d4ed8; color: white; }
+        .btn-green { background: #16a34a; color: white; }
+        .btn-gray { background: #e5e7eb; color: #374151; }
+        .btn-red { background: #dc2626; color: white; }
+        h1 { font-size: 24px; margin-bottom: 8px; }
+        h2 { font-size: 18px; margin-bottom: 16px; }
+        h3 { font-size: 15px; margin-bottom: 8px; }
+        .text-muted { color: #6b7280; font-size: 14px; }
+        .flex { display: flex; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .flex-1 { flex: 1; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+        .mt-6 { margin-top: 24px; }
+        .mb-1 { margin-bottom: 4px; }
+        .mb-2 { margin-bottom: 8px; }
+        textarea, input[type=text], input[type=password] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+        }
+        textarea:focus, input:focus { outline: 2px solid #1d4ed8; border-color: transparent; }
+        label { font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 4px; }
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .empty { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/dashboard" class="brand">🎯 Freelance Hunter</a>
+    <a href="/dashboard">Matches</a>
+    <a href="/dashboard/outreach">Outreach</a>
+    <div class="spacer"></div>
+    <a href="/logout">Logout</a>
+</nav>
+{% block content %}{% endblock %}
+</body>
+</html>
