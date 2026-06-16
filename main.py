@@ -85,7 +85,7 @@ async def root():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, _=Depends(check_auth)):
+async def dashboard(request: Request, msg: str = "", _=Depends(check_auth)):
     pending = get_pending_listings(min_score=7)
     all_listings = get_all_listings(limit=20)
     return templates.TemplateResponse("dashboard.html", {
@@ -93,6 +93,7 @@ async def dashboard(request: Request, _=Depends(check_auth)):
         "pending": pending,
         "all_listings": all_listings,
         "now": datetime.now(timezone.utc),
+        "msg": msg,
     })
 
 
@@ -170,7 +171,11 @@ async def skip_outreach(target_id: str, _=Depends(check_auth)):
 async def trigger_pipeline(request: Request, _=Depends(check_auth)):
     """Manually trigger the pipeline (useful for testing)."""
     result = run_pipeline()
-    return {"status": "ok", "result": result}
+    matches = result.get("high_score_matches", 0)
+    found = result.get("new_listings_found", 0)
+    outreach = result.get("outreach_drafts", 0)
+    msg = f"Pipeline complete — {found} new listings found, {matches} high-score matches, {outreach} outreach drafts."
+    return RedirectResponse(f"/dashboard?msg={msg}", status_code=302)
 
 
 @app.get("/health")

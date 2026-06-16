@@ -15,6 +15,12 @@
         </form>
     </div>
 
+    {% if msg %}
+    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px; margin-top:12px; font-size:14px; color:#166534;">
+        ✓ {{ msg }}
+    </div>
+    {% endif %}
+
     {% if pending %}
     <div class="section-title mt-6">Awaiting your decision (score ≥ 7)</div>
     {% for listing in pending %}
