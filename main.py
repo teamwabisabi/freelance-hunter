@@ -85,15 +85,31 @@ async def root():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, msg: str = "", _=Depends(check_auth)):
+async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, _=Depends(check_auth)):
     pending = get_pending_listings(min_score=7)
-    all_listings = get_all_listings(limit=20)
+    all_listings = get_all_listings(limit=100)
+
+    # Counts
+    total = len(all_listings)
+    skipped_count = sum(1 for l in all_listings if l["status"] == "skipped")
+    approved_count = sum(1 for l in all_listings if l["status"] == "approved")
+    submitted_count = sum(1 for l in all_listings if l["status"] == "submitted")
+
+    # Filter unless user wants to see skipped
+    if not show_skipped:
+        all_listings = [l for l in all_listings if l["status"] != "skipped"]
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "pending": pending,
         "all_listings": all_listings,
         "now": datetime.now(timezone.utc),
         "msg": msg,
+        "show_skipped": show_skipped,
+        "total": total,
+        "skipped_count": skipped_count,
+        "approved_count": approved_count,
+        "submitted_count": submitted_count,
     })
 
 
