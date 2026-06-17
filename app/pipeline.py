@@ -21,6 +21,41 @@ from app.notifier import send_digest
 
 MIN_SCORE = int(os.environ.get("MIN_SCORE", "7"))
 
+# Accepted locations in all relevant languages
+ACCEPTED_LOCATIONS = [
+    # Brussels
+    "brussels", "bruxelles", "brussel", "brüssel",
+    # Hasselt
+    "hasselt",
+    # Maastricht
+    "maastricht",
+    # Eindhoven
+    "eindhoven",
+    # Liège
+    "liege", "liège", "luik", "lüttich",
+    # Namur
+    "namur", "namen",
+    # Leuven
+    "leuven", "louvain",
+    # Mechelen
+    "mechelen", "malines",
+    # Antwerp
+    "antwerp", "antwerpen", "anvers",
+    # Remote
+    "remote", "télétravail", "telewerk", "homeworking",
+    "home office", "hybrid", "hybride",
+    # Generic Belgium (catch-all for unspecified Belgian roles)
+    "belgium", "belgique", "belgië", "belgien",
+]
+
+def is_acceptable_location(listing: dict) -> bool:
+    """Return True if the listing location is in our accepted list."""
+    location = (listing.get("location") or "").lower()
+    # If location is empty or unknown, let it through and let Claude decide
+    if not location or location in ("", "unknown", "n/a"):
+        return True
+    return any(loc in location for loc in ACCEPTED_LOCATIONS)
+
 RELEVANT_KEYWORDS = [
     "agile coach",
     "scrum master",
@@ -59,16 +94,24 @@ def run_pipeline():
     new_listings = [l for l in raw_listings if l["external_id"] not in known_ids]
     print(f"New (unseen) listings: {len(new_listings)}")
 
-    # 2b. Quick keyword pre-filter to avoid scoring irrelevant listings
+    # 2b. Quick keyword pre-filter
     relevant = [l for l in new_listings if is_relevant(l)]
     skipped = len(new_listings) - len(relevant)
     print(f"After keyword filter: {len(relevant)} relevant, {skipped} skipped")
 
-    # Insert irrelevant listings without scoring (so we don't re-process them)
+    # 2c. Location filter
+    relevant = [l for l in relevant if is_acceptable_location(l)]
+    location_skipped = len([l for l in new_listings if is_relevant(l)]) - len(relevant)
+    print(f"After location filter: {len(relevant)} remaining, {location_skipped} geo-filtered")
+
+    # Insert irrelevant/geo-filtered listings without scoring
     for listing in new_listings:
-        if not is_relevant(listing):
+        if not is_relevant(listing) or not is_acceptable_location(listing):
             listing["match_score"] = 0
-            listing["match_reasoning"] = "Filtered out by keyword pre-check"
+            listing["match_reasoning"] = (
+                "Filtered out by keyword pre-check" if not is_relevant(listing)
+                else f"Location not in accepted list: {listing.get('location')}"
+            )
             listing["status"] = "skipped"
             try:
                 insert_job_listing(listing)
