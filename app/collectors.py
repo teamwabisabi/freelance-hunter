@@ -54,9 +54,12 @@ def collect_linkedin() -> list[dict]:
     seen = set()
 
     searches = [
-        ("Agile Coach", "Belgium", "C"),   # C = Contract
+        # f_JT=C = Contract, f_JT=T = Temporary — both relevant for freelance
+        ("Agile Coach", "Belgium", "C"),
         ("Scrum Master", "Belgium", "C"),
-        ("Agile Coach", "Belgium", "F"),   # F = Full-time (some freelance posted as FT)
+        ("Agile Coach", "Belgium", "T"),
+        ("Scrum Master freelance", "Belgium", "C"),
+        ("Coach Agile", "Belgique", "C"),
     ]
 
     with httpx.Client(headers=HEADERS, timeout=20, follow_redirects=True) as client:
@@ -121,54 +124,54 @@ def collect_freelance_be() -> list[dict]:
     seen = set()
 
     with httpx.Client(headers=HEADERS, timeout=20, follow_redirects=True) as client:
-        for term in ["agile coach", "scrum master"]:
-            url = f"https://www.freelance.be/en/projects?search={term.replace(' ', '+')}"
-            try:
-                r = client.get(url)
-                if r.status_code != 200:
-                    print(f"freelance.be '{term}': HTTP {r.status_code}")
-                    continue
-
-                soup = BeautifulSoup(r.text, "html.parser")
-
-                # freelance.be project cards
-                cards = soup.select("div.project-item, article.project, .col-project")
-                if not cards:
-                    # broader fallback
-                    cards = soup.select("h2 a, h3 a")
-
-                for card in cards:
-                    # Try to get link
-                    link_el = card.select_one("a") if card.name != "a" else card
-                    if not link_el:
+        for term in ["agile+coach", "scrum+master"]:
+            # Try both URL patterns
+            for url in [
+                f"https://www.freelance.be/nl/opdrachten?zoekterm={term}",
+                f"https://www.freelance.be/fr/missions?terme={term}",
+                f"https://www.freelance.be/en/projects?keyword={term}",
+            ]:
+                try:
+                    r = client.get(url)
+                    if r.status_code == 404:
+                        continue
+                    if r.status_code != 200:
+                        print(f"freelance.be '{url}': HTTP {r.status_code}")
                         continue
 
-                    href = link_el.get("href", "")
-                    if not href or href in seen:
-                        continue
-                    seen.add(href)
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    cards = soup.select(
+                        "div.project-item, article.project, .col-project, "
+                        "h2 a[href*='opdracht'], h2 a[href*='mission'], h3 a"
+                    )
 
-                    full_url = href if href.startswith("http") else f"https://www.freelance.be{href}"
-                    title = link_el.get_text(strip=True) or card.get_text(strip=True)[:80]
+                    for card in cards:
+                        link_el = card if card.name == "a" else card.select_one("a")
+                        if not link_el:
+                            continue
+                        href = link_el.get("href", "")
+                        if not href or href in seen:
+                            continue
+                        seen.add(href)
+                        full_url = href if href.startswith("http") else f"https://www.freelance.be{href}"
+                        title = link_el.get_text(strip=True) or card.get_text(strip=True)[:80]
+                        listings.append({
+                            "external_id": _make_id("freelance_be", full_url),
+                            "source": "freelance_be",
+                            "title": title,
+                            "company": None,
+                            "location": "Belgium",
+                            "description": card.get_text(separator=" ", strip=True)[:800],
+                            "url": full_url,
+                            "raw_data": {"search": term},
+                        })
 
-                    # Try to get company/description from siblings
-                    desc = card.get_text(separator=" ", strip=True)[:800]
+                    if cards:
+                        print(f"freelance.be '{url}': {len(cards)} cards")
+                        break  # found working URL pattern, stop trying others
 
-                    listings.append({
-                        "external_id": _make_id("freelance_be", full_url),
-                        "source": "freelance_be",
-                        "title": title,
-                        "company": None,
-                        "location": "Belgium",
-                        "description": desc,
-                        "url": full_url,
-                        "raw_data": {"search": term},
-                    })
-
-                print(f"freelance.be '{term}': {len(cards)} cards")
-
-            except Exception as e:
-                print(f"freelance.be error: {e}")
+                except Exception as e:
+                    print(f"freelance.be error for {url}: {e}")
 
     return listings
 

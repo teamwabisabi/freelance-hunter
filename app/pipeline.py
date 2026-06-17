@@ -20,12 +20,17 @@ from app.scorer import score_and_draft, draft_outreach_email
 from app.notifier import send_digest
 
 RELEVANT_KEYWORDS = [
-    "agile", "scrum", "coach", "kanban", "safe", "lean",
-    "transformation", "sprint", "product owner", "tribe",
+    "agile coach",
+    "scrum master",
+    "agile master",
+    "coach agile",
+    "agiliste",
+    "servant leader",
+    "scrum coach",
 ]
 
 def is_relevant(listing: dict) -> bool:
-    """Quick keyword check before spending a Claude API call."""
+    """Require agile/scrum-specific phrases, not just any agile keyword."""
     text = (
         (listing.get("title") or "") + " " +
         (listing.get("description") or "")
