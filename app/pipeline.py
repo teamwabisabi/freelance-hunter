@@ -19,7 +19,19 @@ from app.database import (
 from app.scorer import score_and_draft, draft_outreach_email
 from app.notifier import send_digest
 
-MIN_SCORE = int(os.environ.get("MIN_SCORE", "7"))
+RELEVANT_KEYWORDS = [
+    "agile", "scrum", "coach", "kanban", "safe", "lean",
+    "transformation", "sprint", "product owner", "tribe",
+]
+
+def is_relevant(listing: dict) -> bool:
+    """Quick keyword check before spending a Claude API call."""
+    text = (
+        (listing.get("title") or "") + " " +
+        (listing.get("description") or "")
+    ).lower()
+    return any(kw in text for kw in RELEVANT_KEYWORDS)
+
 
 
 def run_pipeline():
@@ -40,9 +52,25 @@ def run_pipeline():
     new_listings = [l for l in raw_listings if l["external_id"] not in known_ids]
     print(f"New (unseen) listings: {len(new_listings)}")
 
-    # 3. Score new listings
-    high_score_listings = []
+    # 2b. Quick keyword pre-filter to avoid scoring irrelevant listings
+    relevant = [l for l in new_listings if is_relevant(l)]
+    skipped = len(new_listings) - len(relevant)
+    print(f"After keyword filter: {len(relevant)} relevant, {skipped} skipped")
+
+    # Insert irrelevant listings without scoring (so we don't re-process them)
     for listing in new_listings:
+        if not is_relevant(listing):
+            listing["match_score"] = 0
+            listing["match_reasoning"] = "Filtered out by keyword pre-check"
+            listing["status"] = "skipped"
+            try:
+                insert_job_listing(listing)
+            except Exception:
+                pass
+
+    # 3. Score relevant listings
+    high_score_listings = []
+    for listing in relevant:
         print(f"  Scoring: {listing['title']} @ {listing.get('company', '?')}")
         try:
             score_result = score_and_draft(listing)
