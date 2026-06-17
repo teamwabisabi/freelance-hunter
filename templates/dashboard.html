@@ -19,20 +19,28 @@
     {% endif %}
 
     <!-- Stats bar -->
-    <div style="display:flex; gap:12px; margin:16px 0;">
-        <div class="card" style="padding:12px 20px; flex:1; text-align:center;">
+    <div style="display:flex; gap:12px; margin:16px 0; flex-wrap:wrap;">
+        <div class="card" style="padding:12px 20px; flex:1; text-align:center; min-width:80px;">
             <div style="font-size:22px; font-weight:700; color:#1d4ed8;">{{ total }}</div>
             <div style="font-size:12px; color:#6b7280;">Total found</div>
         </div>
-        <div class="card" style="padding:12px 20px; flex:1; text-align:center;">
+        <div class="card" style="padding:12px 20px; flex:1; text-align:center; min-width:80px;">
             <div style="font-size:22px; font-weight:700; color:#f59e0b;">{{ pending|length }}</div>
-            <div style="font-size:12px; color:#6b7280;">Pending review</div>
+            <div style="font-size:12px; color:#6b7280;">Pending</div>
         </div>
-        <div class="card" style="padding:12px 20px; flex:1; text-align:center;">
-            <div style="font-size:22px; font-weight:700; color:#22c55e;">{{ approved_count }}</div>
-            <div style="font-size:12px; color:#6b7280;">Approved</div>
+        <div class="card" style="padding:12px 20px; flex:1; text-align:center; min-width:80px;">
+            <div style="font-size:22px; font-weight:700; color:#0369a1;">{{ applied_count }}</div>
+            <div style="font-size:12px; color:#6b7280;">Applied</div>
         </div>
-        <div class="card" style="padding:12px 20px; flex:1; text-align:center;">
+        <div class="card" style="padding:12px 20px; flex:1; text-align:center; min-width:80px;">
+            <div style="font-size:22px; font-weight:700; color:#92400e;">{{ interviewing_count }}</div>
+            <div style="font-size:12px; color:#6b7280;">Interviewing</div>
+        </div>
+        <div class="card" style="padding:12px 20px; flex:1; text-align:center; min-width:80px;">
+            <div style="font-size:22px; font-weight:700; color:#22c55e;">{{ selected_count }}</div>
+            <div style="font-size:12px; color:#6b7280;">Selected</div>
+        </div>
+        <div class="card" style="padding:12px 20px; flex:1; text-align:center; min-width:80px;">
             <div style="font-size:22px; font-weight:700; color:#6b7280;">{{ skipped_count }}</div>
             <div style="font-size:12px; color:#6b7280;">Skipped</div>
         </div>
@@ -100,9 +108,15 @@
                 {% if listing.status == 'pending' %}
                     <span class="badge badge-yellow">pending</span>
                 {% elif listing.status == 'approved' %}
-                    <span class="badge badge-green">approved</span>
-                {% elif listing.status == 'submitted' %}
-                    <span class="badge badge-blue">submitted</span>
+                    <span class="badge badge-blue">approved</span>
+                {% elif listing.status == 'applied' %}
+                    <span class="badge" style="background:#e0f2fe; color:#0369a1;">applied</span>
+                {% elif listing.status == 'interviewing' %}
+                    <span class="badge" style="background:#fef3c7; color:#92400e;">interviewing</span>
+                {% elif listing.status == 'selected' %}
+                    <span class="badge badge-green">🎉 selected</span>
+                {% elif listing.status == 'rejected' %}
+                    <span class="badge badge-red">rejected</span>
                 {% elif listing.status == 'skipped' %}
                     <span class="badge badge-gray">skipped</span>
                 {% else %}

@@ -93,6 +93,9 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
     total = len(all_listings)
     skipped_count = sum(1 for l in all_listings if l["status"] == "skipped")
     approved_count = sum(1 for l in all_listings if l["status"] == "approved")
+    applied_count = sum(1 for l in all_listings if l["status"] == "applied")
+    interviewing_count = sum(1 for l in all_listings if l["status"] == "interviewing")
+    selected_count = sum(1 for l in all_listings if l["status"] == "selected")
     submitted_count = sum(1 for l in all_listings if l["status"] == "submitted")
 
     # Filter unless user wants to see skipped
@@ -109,7 +112,9 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
         "total": total,
         "skipped_count": skipped_count,
         "approved_count": approved_count,
-        "submitted_count": submitted_count,
+        "applied_count": applied_count,
+        "interviewing_count": interviewing_count,
+        "selected_count": selected_count,
     })
 
 
@@ -134,7 +139,7 @@ async def decide_listing(
     _=Depends(check_auth),
 ):
     """Handle approve / skip / save decisions."""
-    valid_actions = {"approved", "skipped", "saved"}
+    valid_actions = {"approved", "skipped", "saved", "applied", "interviewing", "rejected", "selected"}
     if action not in valid_actions:
         raise HTTPException(status_code=400, detail="Invalid action")
 

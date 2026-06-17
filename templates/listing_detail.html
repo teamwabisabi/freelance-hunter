@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     <a href="/dashboard" class="text-muted" style="font-size:14px; text-decoration:none;">← Back to dashboard</a>
-    
+
     <div class="flex gap-3 items-center mt-4 mb-2">
         {% set score = listing.match_score or 0 %}
         <div class="score {% if score >= 8 %}score-high{% elif score >= 6 %}score-mid{% else %}score-low{% endif %}">
@@ -12,6 +12,23 @@
         <div>
             <h1 style="font-size:20px;">{{ listing.title }}</h1>
             <p class="text-muted">{{ listing.company or '—' }} · {{ listing.location or 'Belgium' }} · {{ listing.source }}</p>
+        </div>
+        <div style="margin-left:auto;">
+            {% if listing.status == 'pending' %}
+                <span class="badge badge-yellow" style="font-size:14px; padding:6px 14px;">pending</span>
+            {% elif listing.status == 'approved' %}
+                <span class="badge badge-blue" style="font-size:14px; padding:6px 14px;">approved</span>
+            {% elif listing.status == 'applied' %}
+                <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:14px; padding:6px 14px;">applied</span>
+            {% elif listing.status == 'interviewing' %}
+                <span class="badge" style="background:#fef3c7; color:#92400e; font-size:14px; padding:6px 14px;">interviewing</span>
+            {% elif listing.status == 'selected' %}
+                <span class="badge badge-green" style="font-size:14px; padding:6px 14px;">🎉 selected</span>
+            {% elif listing.status == 'rejected' %}
+                <span class="badge badge-red" style="font-size:14px; padding:6px 14px;">rejected</span>
+            {% elif listing.status == 'skipped' %}
+                <span class="badge badge-gray" style="font-size:14px; padding:6px 14px;">skipped</span>
+            {% endif %}
         </div>
     </div>
 
@@ -22,24 +39,20 @@
     <!-- Match Analysis -->
     <div class="card mt-4">
         <div class="section-title">Claude's Analysis</div>
-        
         <div class="mb-2">
             <label>Match reasoning</label>
             <p style="font-size:14px; color:#374151;">{{ listing.match_reasoning }}</p>
         </div>
-        
         <div class="mb-2 mt-4">
             <label>Most relevant experiences</label>
             <p style="font-size:14px; color:#374151;">{{ listing.relevant_experiences }}</p>
         </div>
-        
         {% if listing.concerns and listing.concerns != 'None' %}
         <div class="mb-2 mt-4">
             <label>Concerns / gaps</label>
             <p style="font-size:14px; color:#dc2626;">{{ listing.concerns }}</p>
         </div>
         {% endif %}
-        
         <div class="mt-4">
             <label>Recommended CV variant</label>
             <span class="badge badge-blue">{{ listing.recommended_cv_variant }}</span>
@@ -54,55 +67,60 @@
     </div>
     {% endif %}
 
-    <!-- Decision form -->
-    {% if listing.status == 'pending' %}
+    <!-- Cover letter (always shown if exists) -->
+    {% set cover = listing.edited_cover_letter or listing.draft_cover_letter %}
+    {% if cover or listing.status in ['pending', 'approved', 'saved'] %}
     <div class="card mt-4">
-        <div class="section-title">Your Application</div>
-        
+        <div class="section-title">Cover Letter / Motivation</div>
         <form method="post" action="/dashboard/listing/{{ listing.id }}/decide">
-            <div class="mb-2">
-                <label for="edited_cover_letter">Cover letter / motivation (edit before approving)</label>
-                <textarea name="edited_cover_letter" id="edited_cover_letter" rows="14" 
-                          style="font-size:13px; line-height:1.6;">{{ listing.draft_cover_letter or '' }}</textarea>
-            </div>
-            
+            <textarea name="edited_cover_letter" rows="14"
+                      style="font-size:13px; line-height:1.6;">{{ cover or '' }}</textarea>
+
             <div class="mb-2 mt-4">
-                <label for="your_notes">Your notes (private, not sent)</label>
-                <textarea name="your_notes" id="your_notes" rows="3" 
-                          placeholder="e.g. follow up with contact, ask about remote policy…"></textarea>
+                <label for="your_notes">Your notes (private)</label>
+                <textarea name="your_notes" id="your_notes" rows="2"
+                          placeholder="e.g. follow up with contact, ask about remote policy…">{{ listing.your_notes or '' }}</textarea>
             </div>
-            
-            <div class="flex gap-2 mt-4">
-                <button type="submit" name="action" value="approved" class="btn btn-green">
-                    ✓ Approve & mark for submission
-                </button>
-                <button type="submit" name="action" value="saved" class="btn btn-primary">
-                    ⊙ Save for later
-                </button>
-                <button type="submit" name="action" value="skipped" class="btn btn-gray"
-                        onclick="return confirm('Skip this listing?')">
-                    ✗ Skip
-                </button>
+
+            <!-- Action buttons — context-sensitive per status -->
+            <div class="flex gap-2 mt-4" style="flex-wrap:wrap;">
+
+                {% if listing.status == 'pending' %}
+                    <button type="submit" name="action" value="approved" class="btn btn-green">✓ Approve</button>
+                    <button type="submit" name="action" value="saved" class="btn btn-primary">⊙ Save for later</button>
+                    <button type="submit" name="action" value="skipped" class="btn btn-gray"
+                            onclick="return confirm('Skip this listing?')">✗ Skip</button>
+
+                {% elif listing.status in ['approved', 'saved'] %}
+                    <button type="submit" name="action" value="applied" class="btn btn-green">📨 Mark as Applied</button>
+                    <button type="submit" name="action" value="skipped" class="btn btn-gray"
+                            onclick="return confirm('Skip this listing?')">✗ Skip</button>
+
+                {% elif listing.status == 'applied' %}
+                    <button type="submit" name="action" value="interviewing" class="btn btn-green">🗓 In Interview</button>
+                    <button type="submit" name="action" value="rejected" class="btn btn-red">✗ Rejected</button>
+
+                {% elif listing.status == 'interviewing' %}
+                    <button type="submit" name="action" value="selected" class="btn btn-green">🎉 Selected!</button>
+                    <button type="submit" name="action" value="rejected" class="btn btn-red">✗ Rejected</button>
+
+                {% elif listing.status in ['rejected', 'selected', 'skipped'] %}
+                    <button type="submit" name="action" value="approved" class="btn btn-gray">↩ Re-open</button>
+                {% endif %}
+
+                <!-- Always allow saving notes -->
+                <button type="submit" name="action" value="{{ listing.status }}" class="btn btn-gray">💾 Save notes</button>
             </div>
         </form>
     </div>
-    {% else %}
+    {% endif %}
+
+    {% if listing.your_notes and listing.status not in ['pending', 'approved', 'saved'] %}
     <div class="card mt-4">
-        <div class="section-title">Decision</div>
-        <p>Status: <strong>{{ listing.status }}</strong></p>
-        {% if listing.edited_cover_letter %}
-        <div class="mt-4">
-            <label>Your edited cover letter</label>
-            <p style="font-size:14px; white-space:pre-wrap; line-height:1.6; color:#374151;">{{ listing.edited_cover_letter }}</p>
-        </div>
-        {% endif %}
-        {% if listing.your_notes %}
-        <div class="mt-4">
-            <label>Your notes</label>
-            <p style="font-size:14px; color:#374151;">{{ listing.your_notes }}</p>
-        </div>
-        {% endif %}
+        <div class="section-title">Your Notes</div>
+        <p style="font-size:14px; color:#374151;">{{ listing.your_notes }}</p>
     </div>
     {% endif %}
+
 </div>
 {% endblock %}
