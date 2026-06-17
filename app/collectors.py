@@ -233,82 +233,79 @@ def collect_references_be() -> list[dict]:
 
 def collect_malt() -> list[dict]:
     """
-    Scrape Malt.be project listings.
-    Malt is JS-heavy so we use Playwright here.
+    Scrape Malt.be project listings using async Playwright
+    run via asyncio to avoid conflict with FastAPI's event loop.
     """
-    listings = []
+    import asyncio
 
+    async def _scrape():
+        listings = []
+        try:
+            from playwright.async_api import async_playwright
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=["--no-sandbox", "--disable-setuid-sandbox",
+                          "--disable-dev-shm-usage"],
+                )
+                page = await browser.new_page(
+                    user_agent=HEADERS["User-Agent"],
+                    extra_http_headers={"Accept-Language": "nl-BE,nl;q=0.9,en;q=0.8"},
+                )
+                seen = set()
+                for term in ["agile-coach", "scrum-master"]:
+                    try:
+                        url = f"https://www.malt.be/s/{term}?maxDailyRate=0"
+                        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                        await page.wait_for_timeout(3000)
+                        html = await page.content()
+                        soup = BeautifulSoup(html, "html.parser")
+                        cards = soup.select(
+                            "article, .mission-card, [data-testid='mission-card'], "
+                            ".sc-mission-card, div[class*='MissionCard']"
+                        )
+                        for card in cards:
+                            link_el = card.select_one(
+                                "a[href*='/project/'], a[href*='/mission/']"
+                            )
+                            title_el = card.select_one("h2, h3, [class*='title']")
+                            if not link_el and not title_el:
+                                continue
+                            href = link_el.get("href", "") if link_el else ""
+                            title = (title_el.get_text(strip=True) if title_el
+                                     else card.get_text(strip=True)[:60])
+                            uid = href or title
+                            if uid in seen:
+                                continue
+                            seen.add(uid)
+                            full_url = (href if href.startswith("http")
+                                        else f"https://www.malt.be{href}")
+                            listings.append({
+                                "external_id": _make_id("malt", uid),
+                                "source": "malt",
+                                "title": title,
+                                "company": None,
+                                "location": "Belgium",
+                                "description": card.get_text(separator=" ", strip=True)[:800],
+                                "url": full_url,
+                                "raw_data": {"search": term},
+                            })
+                        print(f"Malt '{term}': {len(cards)} cards")
+                    except Exception as e:
+                        print(f"Malt page error for '{term}': {e}")
+                await browser.close()
+        except ImportError:
+            print("Playwright not installed — skipping Malt")
+        except Exception as e:
+            print(f"Malt collector error: {e}")
+        return listings
+
+    # Run async scraper in a fresh event loop (avoids conflict with FastAPI)
     try:
-        from playwright.sync_api import sync_playwright
-
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-            )
-            page = browser.new_page(
-                user_agent=HEADERS["User-Agent"],
-                extra_http_headers={"Accept-Language": "nl-BE,nl;q=0.9,en;q=0.8"},
-            )
-
-            seen = set()
-            for term in ["agile-coach", "scrum-master"]:
-                try:
-                    url = f"https://www.malt.be/s/{term}?maxDailyRate=0"
-                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                    page.wait_for_timeout(3000)  # let JS render
-
-                    html = page.content()
-                    soup = BeautifulSoup(html, "html.parser")
-
-                    cards = soup.select(
-                        "article, .mission-card, [data-testid='mission-card'], "
-                        ".sc-mission-card, div[class*='MissionCard']"
-                    )
-
-                    for card in cards:
-                        link_el = card.select_one("a[href*='/project/'], a[href*='/mission/']")
-                        title_el = card.select_one("h2, h3, [class*='title']")
-
-                        if not link_el and not title_el:
-                            continue
-
-                        href = (link_el.get("href", "") if link_el else "")
-                        title = (title_el.get_text(strip=True) if title_el
-                                 else card.get_text(strip=True)[:60])
-
-                        uid = href or title
-                        if uid in seen:
-                            continue
-                        seen.add(uid)
-
-                        full_url = (href if href.startswith("http")
-                                    else f"https://www.malt.be{href}")
-
-                        listings.append({
-                            "external_id": _make_id("malt", uid),
-                            "source": "malt",
-                            "title": title,
-                            "company": None,
-                            "location": "Belgium",
-                            "description": card.get_text(separator=" ", strip=True)[:800],
-                            "url": full_url,
-                            "raw_data": {"search": term},
-                        })
-
-                    print(f"Malt '{term}': {len(cards)} cards")
-
-                except Exception as e:
-                    print(f"Malt page error for '{term}': {e}")
-
-            browser.close()
-
-    except ImportError:
-        print("Playwright not installed — skipping Malt")
-    except Exception as e:
-        print(f"Malt collector error: {e}")
-
-    return listings
+        loop = asyncio.new_event_loop()
+        return loop.run_until_complete(_scrape())
+    finally:
+        loop.close()
 
 
 # ─── Stepstone.be ─────────────────────────────────────────────────────────────

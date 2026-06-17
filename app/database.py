@@ -90,7 +90,9 @@ def get_known_external_ids(source: str = None) -> set:
 
 def insert_job_listing(listing: dict) -> dict:
     client = get_client()
-    result = client.table("job_listings").insert(listing).execute()
+    # Never pass an id — let Supabase generate it to avoid conflicts
+    clean = {k: v for k, v in listing.items() if k != "id"}
+    result = client.table("job_listings").insert(clean).execute()
     return result.data[0] if result.data else {}
 
 

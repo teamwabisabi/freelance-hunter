@@ -19,6 +19,8 @@ from app.database import (
 from app.scorer import score_and_draft, draft_outreach_email
 from app.notifier import send_digest
 
+MIN_SCORE = int(os.environ.get("MIN_SCORE", "7"))
+
 RELEVANT_KEYWORDS = [
     "agile coach",
     "scrum master",
