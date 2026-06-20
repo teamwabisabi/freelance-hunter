@@ -114,11 +114,13 @@ def get_pending_listings(min_score: int = 7) -> list:
     return result.data
 
 
-def get_all_listings(limit: int = 50) -> list:
+def get_all_listings(limit: int = 100) -> list:
     client = get_client()
+    # Get all non-filtered listings, pending ones always included
     result = (
         client.table("job_listings")
         .select("*")
+        .not_.eq("status", "filtered")
         .order("collected_at", desc=True)
         .limit(limit)
         .execute()
