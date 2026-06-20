@@ -46,10 +46,21 @@
         </div>
     </div>
 
-    <!-- Pending review -->
+    <!-- Score filter -->
+    <div class="flex gap-2 items-center mt-6 mb-2">
+        <span class="section-title" style="margin:0;">Awaiting your decision</span>
+        <div style="margin-left:auto; display:flex; gap:6px;">
+            {% for score, label in [(7, '7+'), (5, '5+'), (3, '3+')] %}
+            <a href="/dashboard?min_score={{ score }}&show_skipped={{ show_skipped }}"
+               style="padding:3px 10px; border-radius:20px; font-size:12px; text-decoration:none;
+                      {% if min_score == score %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">
+                {{ label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
     {% if pending %}
-    <div class="section-title mt-6">Awaiting your decision (score ≥ 7)</div>
-    {% for listing in pending %}
     {% set score = listing.match_score or 0 %}
     <div class="card">
         <div class="flex gap-3 items-center">
@@ -76,8 +87,8 @@
     {% else %}
     <div class="card empty mt-4">
         <div style="font-size:40px; margin-bottom:12px;">🎯</div>
-        <p>No matches pending review right now.</p>
-        <p style="margin-top:6px; font-size:12px;">The pipeline runs daily at 07:00 UTC, or click "Run now" to check immediately.</p>
+        <p>No matches pending review at score ≥ {{ min_score }}.</p>
+        <p style="margin-top:6px; font-size:12px;">Try lowering the threshold, or click "Run now" to check for new listings.</p>
     </div>
     {% endif %}
 

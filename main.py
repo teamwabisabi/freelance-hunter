@@ -85,8 +85,8 @@ async def root():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, _=Depends(check_auth)):
-    pending = get_pending_listings(min_score=7)
+async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, min_score: int = 7, _=Depends(check_auth)):
+    pending = get_pending_listings(min_score=min_score)
     all_listings = get_all_listings(limit=100)
 
     # Counts
@@ -112,6 +112,7 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
         "now": datetime.now(timezone.utc),
         "msg": msg,
         "show_skipped": show_skipped,
+        "min_score": min_score,
         "total": total,
         "filtered_count": filtered_count,
         "skipped_count": skipped_count,
