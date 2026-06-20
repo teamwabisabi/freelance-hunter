@@ -46,49 +46,49 @@
         </div>
     </div>
 
-    <!-- Score filter -->
+    <!-- Score filter + section title -->
     <div class="flex gap-2 items-center mt-6 mb-2">
         <span class="section-title" style="margin:0;">Awaiting your decision</span>
         <div style="margin-left:auto; display:flex; gap:6px;">
-            {% for score, label in [(7, '7+'), (5, '5+'), (3, '3+')] %}
-            <a href="/dashboard?min_score={{ score }}&show_skipped={{ show_skipped }}"
-               style="padding:3px 10px; border-radius:20px; font-size:12px; text-decoration:none;
-                      {% if min_score == score %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">
-                {{ label }}
-            </a>
-            {% endfor %}
+            <a href="/dashboard?min_score=7&show_skipped={{ show_skipped }}"
+               style="padding:3px 10px; border-radius:20px; font-size:12px; text-decoration:none; {% if min_score == 7 %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">7+</a>
+            <a href="/dashboard?min_score=5&show_skipped={{ show_skipped }}"
+               style="padding:3px 10px; border-radius:20px; font-size:12px; text-decoration:none; {% if min_score == 5 %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">5+</a>
+            <a href="/dashboard?min_score=3&show_skipped={{ show_skipped }}"
+               style="padding:3px 10px; border-radius:20px; font-size:12px; text-decoration:none; {% if min_score == 3 %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">3+</a>
         </div>
     </div>
 
     {% if pending %}
-    {% set score = listing.match_score or 0 %}
-    <div class="card">
-        <div class="flex gap-3 items-center">
-            <div class="score {% if score >= 8 %}score-high{% elif score >= 6 %}score-mid{% else %}score-low{% endif %}">
-                {{ score }}
-            </div>
-            <div class="flex-1">
-                <div class="flex justify-between items-center">
-                    <h3>{{ listing.title }}</h3>
-                    <span class="badge badge-gray">{{ listing.source }}</span>
+        {% for listing in pending %}
+        {% set score = listing.match_score or 0 %}
+        <div class="card">
+            <div class="flex gap-3 items-center">
+                <div class="score {% if score >= 8 %}score-high{% elif score >= 6 %}score-mid{% else %}score-low{% endif %}">
+                    {{ score }}
                 </div>
-                <p class="text-muted mb-1">{{ listing.company or '—' }} · {{ listing.location or 'Belgium' }}</p>
-                <p style="font-size:14px; color:#374151; margin-top:4px;">{{ listing.match_reasoning }}</p>
+                <div class="flex-1">
+                    <div class="flex justify-between items-center">
+                        <h3>{{ listing.title }}</h3>
+                        <span class="badge badge-gray">{{ listing.source }}</span>
+                    </div>
+                    <p class="text-muted mb-1">{{ listing.company or '—' }} · {{ listing.location or 'Belgium' }}</p>
+                    <p style="font-size:14px; color:#374151; margin-top:4px;">{{ listing.match_reasoning }}</p>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <a href="/dashboard/listing/{{ listing.id }}" class="btn btn-primary">Review & Edit →</a>
+                {% if listing.url %}
+                <a href="{{ listing.url }}" target="_blank" class="btn btn-gray">View original ↗</a>
+                {% endif %}
             </div>
         </div>
-        <div class="flex gap-2 mt-4">
-            <a href="/dashboard/listing/{{ listing.id }}" class="btn btn-primary">Review & Edit →</a>
-            {% if listing.url %}
-            <a href="{{ listing.url }}" target="_blank" class="btn btn-gray">View original ↗</a>
-            {% endif %}
-        </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
     {% else %}
     <div class="card empty mt-4">
         <div style="font-size:40px; margin-bottom:12px;">🎯</div>
         <p>No matches pending review at score ≥ {{ min_score }}.</p>
-        <p style="margin-top:6px; font-size:12px;">Try lowering the threshold, or click "Run now" to check for new listings.</p>
+        <p style="margin-top:6px; font-size:12px;">Try lowering the threshold with the buttons above, or click "Run now" to check for new listings.</p>
     </div>
     {% endif %}
 
@@ -97,7 +97,7 @@
     <div class="flex justify-between items-center mt-6 mb-2">
         <div class="section-title" style="margin:0;">Recent activity</div>
         {% if skipped_count > 0 %}
-        <a href="/dashboard?show_skipped={{ 'false' if show_skipped else 'true' }}"
+        <a href="/dashboard?min_score={{ min_score }}&show_skipped={{ 'false' if show_skipped else 'true' }}"
            style="font-size:13px; color:#6b7280; text-decoration:none;">
             {% if show_skipped %}Hide {{ skipped_count }} skipped{% else %}Show {{ skipped_count }} skipped{% endif %}
         </a>
@@ -141,5 +141,6 @@
     </div>
     {% endfor %}
     {% endif %}
+
 </div>
 {% endblock %}
