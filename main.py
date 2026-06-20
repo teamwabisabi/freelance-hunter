@@ -91,6 +91,7 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
 
     # Counts
     total = len(all_listings)
+    filtered_count = sum(1 for l in all_listings if l["status"] == "filtered")
     skipped_count = sum(1 for l in all_listings if l["status"] == "skipped")
     approved_count = sum(1 for l in all_listings if l["status"] == "approved")
     applied_count = sum(1 for l in all_listings if l["status"] == "applied")
@@ -98,9 +99,11 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
     selected_count = sum(1 for l in all_listings if l["status"] == "selected")
     submitted_count = sum(1 for l in all_listings if l["status"] == "submitted")
 
-    # Filter unless user wants to see skipped
-    if not show_skipped:
-        all_listings = [l for l in all_listings if l["status"] != "skipped"]
+    # Always hide auto-filtered; hide manually skipped unless toggled
+    if show_skipped:
+        all_listings = [l for l in all_listings if l["status"] != "filtered"]
+    else:
+        all_listings = [l for l in all_listings if l["status"] not in ("filtered", "skipped")]
 
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
@@ -110,6 +113,7 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
         "msg": msg,
         "show_skipped": show_skipped,
         "total": total,
+        "filtered_count": filtered_count,
         "skipped_count": skipped_count,
         "approved_count": approved_count,
         "applied_count": applied_count,
@@ -139,7 +143,7 @@ async def decide_listing(
     _=Depends(check_auth),
 ):
     """Handle approve / skip / save decisions."""
-    valid_actions = {"approved", "skipped", "saved", "applied", "interviewing", "rejected", "selected"}
+    valid_actions = {"approved", "skipped", "saved", "applied", "interviewing", "rejected", "selected", "filtered"}
     if action not in valid_actions:
         raise HTTPException(status_code=400, detail="Invalid action")
 

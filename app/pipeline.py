@@ -112,7 +112,7 @@ def run_pipeline():
                 "Filtered out by keyword pre-check" if not is_relevant(listing)
                 else f"Location not in accepted list: {listing.get('location')}"
             )
-            listing["status"] = "skipped"
+            listing["status"] = "filtered"  # auto-filtered, not manually skipped
             try:
                 insert_job_listing(listing)
             except Exception:
