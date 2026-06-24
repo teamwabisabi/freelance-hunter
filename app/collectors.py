@@ -85,7 +85,7 @@ def collect_linkedin() -> list[dict]:
                 f"?keywords={keyword.replace(' ', '+')}"
                 f"&location={location}"
                 f"&f_JT={job_type}"
-                f"&f_TPR=r86400"  # last 24h
+                f"&f_TPR=r604800"  # last 7 days
                 f"&position=1&pageNum=0"
             )
             if remote_only:
