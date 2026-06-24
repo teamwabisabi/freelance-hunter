@@ -4,6 +4,7 @@ Also starts the APScheduler for daily pipeline runs.
 """
 
 import os
+import threading
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
@@ -30,6 +31,23 @@ from app.pipeline import run_pipeline
 DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "changeme")
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000")
 
+# ─── Pipeline run lock ────────────────────────────────────────────────────────
+# Both the daily cron job and manual "Run now" calls can hit run_pipeline().
+# Concurrent runs race on inserting the same newly-discovered listing (each
+# snapshots known external_ids independently), which crashes with a duplicate
+# key DB error. Only allow one run in flight at a time.
+
+pipeline_lock = threading.Lock()
+
+def run_pipeline_locked():
+    if not pipeline_lock.acquire(blocking=False):
+        print("Pipeline already running — skipping this trigger.")
+        return {"new_listings_found": 0, "high_score_matches": 0, "outreach_drafts": 0, "skipped": True}
+    try:
+        return run_pipeline()
+    finally:
+        pipeline_lock.release()
+
 # ─── Scheduler ───────────────────────────────────────────────────────────────
 
 scheduler = BackgroundScheduler()
@@ -37,7 +55,7 @@ scheduler = BackgroundScheduler()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Run pipeline daily at 07:00 UTC
-    scheduler.add_job(run_pipeline, "cron", hour=7, minute=0, id="daily_pipeline")
+    scheduler.add_job(run_pipeline_locked, "cron", hour=7, minute=0, id="daily_pipeline")
     scheduler.start()
     print("Scheduler started — pipeline runs daily at 07:00 UTC")
     yield
@@ -199,11 +217,14 @@ async def trigger_pipeline(request: Request, _=Depends(check_auth)):
     """Manually trigger the pipeline (useful for testing)."""
     # Run in a worker thread, not the event loop thread — collect_malt() spins up
     # its own asyncio event loop, which conflicts with the running one otherwise.
-    result = await run_in_threadpool(run_pipeline)
-    matches = result.get("high_score_matches", 0)
-    found = result.get("new_listings_found", 0)
-    outreach = result.get("outreach_drafts", 0)
-    msg = f"Pipeline complete — {found} new listings found, {matches} high-score matches, {outreach} outreach drafts."
+    result = await run_in_threadpool(run_pipeline_locked)
+    if result.get("skipped"):
+        msg = "A pipeline run is already in progress — try again in a bit."
+    else:
+        matches = result.get("high_score_matches", 0)
+        found = result.get("new_listings_found", 0)
+        outreach = result.get("outreach_drafts", 0)
+        msg = f"Pipeline complete — {found} new listings found, {matches} high-score matches, {outreach} outreach drafts."
     return RedirectResponse(f"/dashboard?msg={msg}", status_code=302)
 
 
