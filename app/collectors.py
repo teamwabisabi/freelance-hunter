@@ -55,15 +55,29 @@ def collect_linkedin() -> list[dict]:
 
     searches = [
         # f_JT=C = Contract, f_JT=T = Temporary — both relevant for freelance
-        ("Agile Coach", "Belgium", "C"),
-        ("Scrum Master", "Belgium", "C"),
-        ("Agile Coach", "Belgium", "T"),
-        ("Scrum Master freelance", "Belgium", "C"),
-        ("Coach Agile", "Belgique", "C"),
+        ("Agile Coach", "Belgium", "C", False),
+        ("Scrum Master", "Belgium", "C", False),
+        ("Agile Coach", "Belgium", "T", False),
+        ("Scrum Master freelance", "Belgium", "C", False),
+        ("Coach Agile", "Belgique", "C", False),
+        # Remote-only searches in nearby countries (f_WT=2 = remote work type)
+        ("Agile Coach", "Sweden", "C", True),
+        ("Scrum Master", "Sweden", "C", True),
+        ("Agile Coach", "Denmark", "C", True),
+        ("Scrum Master", "Denmark", "C", True),
+        ("Agile Coach", "Norway", "C", True),
+        ("Scrum Master", "Norway", "C", True),
+        ("Agile Coach", "Germany", "C", True),
+        ("Scrum Master", "Germany", "C", True),
+        ("Agile Coach", "France", "C", True),
+        ("Scrum Master", "France", "C", True),
+        ("Coach Agile", "France", "C", True),
+        ("Agile Coach", "Luxembourg", "C", True),
+        ("Scrum Master", "Luxembourg", "C", True),
     ]
 
     with httpx.Client(headers=HEADERS, timeout=20, follow_redirects=True) as client:
-        for keyword, location, job_type in searches:
+        for keyword, location, job_type, remote_only in searches:
             url = (
                 f"https://www.linkedin.com/jobs/search/"
                 f"?keywords={keyword.replace(' ', '+')}"
@@ -72,6 +86,8 @@ def collect_linkedin() -> list[dict]:
                 f"&f_TPR=r86400"  # last 24h
                 f"&position=1&pageNum=0"
             )
+            if remote_only:
+                url += "&f_WT=2"  # remote work type
             try:
                 r = client.get(url)
                 if r.status_code != 200:
@@ -100,7 +116,10 @@ def collect_linkedin() -> list[dict]:
                         "source": "linkedin",
                         "title": title_el.get_text(strip=True),
                         "company": company_el.get_text(strip=True) if company_el else None,
-                        "location": location_el.get_text(strip=True) if location_el else "Belgium",
+                        "location": (
+                            f"Remote, {location}" if remote_only
+                            else (location_el.get_text(strip=True) if location_el else location)
+                        ),
                         "description": card.get_text(separator=" ", strip=True)[:1000],
                         "url": url_raw,
                         "raw_data": {"search": keyword},
