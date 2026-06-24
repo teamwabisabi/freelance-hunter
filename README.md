@@ -87,7 +87,9 @@ CREATE TABLE IF NOT EXISTS email_log (
 | **Anthropic** | [console.anthropic.com](https://console.anthropic.com) → API Keys | `ANTHROPIC_API_KEY` |
 | **Resend** | [resend.com](https://resend.com) → API Keys (free tier: 100 emails/day) | `RESEND_API_KEY` |
 | **Supabase URL** | Supabase dashboard → Settings → API | `SUPABASE_URL` |
-| **Supabase key** | Supabase dashboard → Settings → API → anon public | `SUPABASE_KEY` |
+| **Supabase key** | Supabase dashboard → Settings → API → `service_role` secret | `SUPABASE_KEY` |
+
+> ⚠️ Use the **service_role** key, not the anon/public key. This app only ever calls Supabase from the server (never from a browser), and tables have Row Level Security enabled with no policies for the anon role — inserts/updates from the pipeline will fail with `new row violates row-level security policy` if you use the anon key. The service_role key bypasses RLS and must never be exposed to a client.
 
 For `EMAIL_FROM`: Resend requires a verified domain. Options:
 - Use Resend's free shared domain: `onboarding@resend.dev` (works immediately)
