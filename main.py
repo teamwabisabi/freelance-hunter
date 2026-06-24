@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -196,7 +197,9 @@ async def skip_outreach(target_id: str, _=Depends(check_auth)):
 @app.post("/admin/run-pipeline")
 async def trigger_pipeline(request: Request, _=Depends(check_auth)):
     """Manually trigger the pipeline (useful for testing)."""
-    result = run_pipeline()
+    # Run in a worker thread, not the event loop thread — collect_malt() spins up
+    # its own asyncio event loop, which conflicts with the running one otherwise.
+    result = await run_in_threadpool(run_pipeline)
     matches = result.get("high_score_matches", 0)
     found = result.get("new_listings_found", 0)
     outreach = result.get("outreach_drafts", 0)
