@@ -5,6 +5,7 @@ All sites tested to be reachable from Railway (not from Claude sandbox).
 """
 
 import hashlib
+import time
 import httpx
 import feedparser
 from bs4 import BeautifulSoup
@@ -71,13 +72,14 @@ def collect_linkedin() -> list[dict]:
         ("Scrum Master", "Germany", "C", True),
         ("Agile Coach", "France", "C", True),
         ("Scrum Master", "France", "C", True),
-        ("Coach Agile", "France", "C", True),
         ("Agile Coach", "Luxembourg", "C", True),
         ("Scrum Master", "Luxembourg", "C", True),
     ]
 
     with httpx.Client(headers=HEADERS, timeout=20, follow_redirects=True) as client:
-        for keyword, location, job_type, remote_only in searches:
+        for i, (keyword, location, job_type, remote_only) in enumerate(searches):
+            if i > 0:
+                time.sleep(2)  # avoid tripping LinkedIn's guest-endpoint rate limit
             url = (
                 f"https://www.linkedin.com/jobs/search/"
                 f"?keywords={keyword.replace(' ', '+')}"
