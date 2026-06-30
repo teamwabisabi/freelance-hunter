@@ -136,7 +136,9 @@ def collect_linkedin() -> list[dict]:
                         "company": company_el.get_text(strip=True) if company_el else None,
                         "location": (
                             f"Remote, {location}" if remote_only
-                            else (location_el.get_text(strip=True) if location_el else location)
+                            # Always suffix with search country so the location filter can match
+                            # even when LinkedIn shows only a region name (e.g. "North Rhine-Westphalia")
+                            else (f"{location_el.get_text(strip=True)}, {location}" if location_el else location)
                         ),
                         "description": card.get_text(separator=" ", strip=True)[:1000],
                         "url": url_raw,
