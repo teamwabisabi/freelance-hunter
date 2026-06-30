@@ -27,10 +27,6 @@ ACCEPTED_LOCATIONS = [
     "brussels", "bruxelles", "brussel", "brüssel",
     # Hasselt
     "hasselt",
-    # Maastricht
-    "maastricht",
-    # Eindhoven
-    "eindhoven",
     # Liège
     "liege", "liège", "luik", "lüttich",
     # Namur
@@ -41,11 +37,22 @@ ACCEPTED_LOCATIONS = [
     "mechelen", "malines",
     # Antwerp
     "antwerp", "antwerpen", "anvers",
-    # Remote
+    # Remote / hybrid
     "remote", "télétravail", "telewerk", "homeworking",
     "home office", "hybrid", "hybride",
-    # Generic Belgium (catch-all for unspecified Belgian roles)
+    # Generic Belgium
     "belgium", "belgique", "belgië", "belgien",
+    # Netherlands
+    "maastricht", "eindhoven", "amsterdam", "rotterdam", "utrecht",
+    "den haag", "the hague", "tilburg", "netherlands", "nederland",
+    # Luxembourg
+    "luxembourg",
+    # France
+    "paris", "lille", "lyon", "strasbourg", "metz", "nancy", "france",
+    # Germany
+    "cologne", "köln", "koeln", "düsseldorf", "dusseldorf",
+    "aachen", "frankfurt", "hamburg", "berlin", "münchen", "munich",
+    "germany", "deutschland",
 ]
 
 def is_acceptable_location(listing: dict) -> bool:

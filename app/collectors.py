@@ -61,19 +61,28 @@ def collect_linkedin() -> list[dict]:
         ("Agile Coach", "Belgium", "T", False),
         ("Scrum Master freelance", "Belgium", "C", False),
         ("Coach Agile", "Belgique", "C", False),
-        # Remote-only searches in nearby countries (f_WT=2 = remote work type)
+        # On-site missions in neighboring countries
+        ("Agile Coach", "Netherlands", "C", False),
+        ("Scrum Master", "Netherlands", "C", False),
+        ("Agile Coach", "Luxembourg", "C", False),
+        ("Scrum Master", "Luxembourg", "C", False),
+        ("Agile Coach", "France", "C", False),
+        ("Scrum Master", "France", "C", False),
+        ("Agile Coach", "Germany", "C", False),
+        ("Scrum Master", "Germany", "C", False),
+        # Remote-only in neighboring + distant countries (f_WT=2 = remote work type)
+        ("Agile Coach", "Luxembourg", "C", True),
+        ("Scrum Master", "Luxembourg", "C", True),
+        ("Agile Coach", "France", "C", True),
+        ("Scrum Master", "France", "C", True),
+        ("Agile Coach", "Germany", "C", True),
+        ("Scrum Master", "Germany", "C", True),
         ("Agile Coach", "Sweden", "C", True),
         ("Scrum Master", "Sweden", "C", True),
         ("Agile Coach", "Denmark", "C", True),
         ("Scrum Master", "Denmark", "C", True),
         ("Agile Coach", "Norway", "C", True),
         ("Scrum Master", "Norway", "C", True),
-        ("Agile Coach", "Germany", "C", True),
-        ("Scrum Master", "Germany", "C", True),
-        ("Agile Coach", "France", "C", True),
-        ("Scrum Master", "France", "C", True),
-        ("Agile Coach", "Luxembourg", "C", True),
-        ("Scrum Master", "Luxembourg", "C", True),
     ]
 
     with httpx.Client(headers=HEADERS, timeout=20, follow_redirects=True) as client:
@@ -92,8 +101,15 @@ def collect_linkedin() -> list[dict]:
                 url += "&f_WT=2"  # remote work type
             try:
                 r = client.get(url)
+                final_url = str(r.url)
+
+                # Detect auth-wall redirect (LinkedIn blocks guest scrapers this way)
+                if any(x in final_url for x in ("authwall", "/login", "/checkpoint", "uas/login")):
+                    print(f"LinkedIn '{keyword}' @ {location}: blocked (redirected to {final_url})")
+                    continue
+
                 if r.status_code != 200:
-                    print(f"LinkedIn {keyword}: HTTP {r.status_code}")
+                    print(f"LinkedIn '{keyword}' @ {location}: HTTP {r.status_code}")
                     continue
 
                 soup = BeautifulSoup(r.text, "html.parser")
@@ -124,13 +140,14 @@ def collect_linkedin() -> list[dict]:
                         ),
                         "description": card.get_text(separator=" ", strip=True)[:1000],
                         "url": url_raw,
-                        "raw_data": {"search": keyword},
+                        "raw_data": {"search": keyword, "search_location": location},
                     })
 
-                print(f"LinkedIn '{keyword}': {len(cards)} cards found")
+                label = f"remote @ {location}" if remote_only else location
+                print(f"LinkedIn '{keyword}' {label}: {len(cards)} cards")
 
             except Exception as e:
-                print(f"LinkedIn error for '{keyword}': {e}")
+                print(f"LinkedIn error for '{keyword}' @ {location}: {e}")
 
     return listings
 
