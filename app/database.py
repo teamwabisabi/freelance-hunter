@@ -81,7 +81,7 @@ def setup_db():
 def get_known_external_ids(source: str = None) -> set:
     """Return all external_ids we've seen, optionally filtered by source."""
     client = get_client()
-    query = client.table("job_listings").select("external_id")
+    query = client.table("job_listings").select("external_id").limit(100_000)
     if source:
         query = query.eq("source", source)
     result = query.execute()
@@ -92,8 +92,13 @@ def insert_job_listing(listing: dict) -> dict:
     client = get_client()
     # Never pass an id — let Supabase generate it to avoid conflicts
     clean = {k: v for k, v in listing.items() if k != "id"}
-    result = client.table("job_listings").insert(clean).execute()
-    return result.data[0] if result.data else {}
+    try:
+        result = client.table("job_listings").insert(clean).execute()
+        return result.data[0] if result.data else {}
+    except Exception as e:
+        if "23505" in str(e):  # unique constraint — already inserted, safe to ignore
+            return {}
+        raise
 
 
 def update_job_listing(listing_id: str, updates: dict):
