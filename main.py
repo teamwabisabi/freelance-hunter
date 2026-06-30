@@ -8,7 +8,7 @@ import threading
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Form, Depends, HTTPException
+from fastapi import BackgroundTasks, FastAPI, Request, Form, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -213,18 +213,13 @@ async def skip_outreach(target_id: str, _=Depends(check_auth)):
 # ─── Admin / manual triggers ─────────────────────────────────────────────────
 
 @app.post("/admin/run-pipeline")
-async def trigger_pipeline(request: Request, _=Depends(check_auth)):
-    """Manually trigger the pipeline (useful for testing)."""
-    # Run in a worker thread, not the event loop thread — collect_malt() spins up
-    # its own asyncio event loop, which conflicts with the running one otherwise.
-    result = await run_in_threadpool(run_pipeline_locked)
-    if result.get("skipped"):
+async def trigger_pipeline(request: Request, background_tasks: BackgroundTasks, _=Depends(check_auth)):
+    """Manually trigger the pipeline — fires in background and returns immediately."""
+    if pipeline_lock.locked():
         msg = "A pipeline run is already in progress — try again in a bit."
     else:
-        matches = result.get("high_score_matches", 0)
-        found = result.get("new_listings_found", 0)
-        outreach = result.get("outreach_drafts", 0)
-        msg = f"Pipeline complete — {found} new listings found, {matches} high-score matches, {outreach} outreach drafts."
+        background_tasks.add_task(run_pipeline_locked)
+        msg = "Pipeline started — refresh in a few minutes to see new listings."
     return RedirectResponse(f"/dashboard?msg={msg}", status_code=302)
 
 
