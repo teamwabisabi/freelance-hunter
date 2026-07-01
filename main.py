@@ -104,7 +104,7 @@ async def root():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, min_score: int = 6, _=Depends(check_auth)):
+async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, show_saved: bool = False, min_score: int = 6, _=Depends(check_auth)):
     pending = get_pending_listings(min_score=min_score)
     all_listings = get_all_listings(limit=100)
 
@@ -124,6 +124,8 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
     else:
         all_listings = [l for l in all_listings if l["status"] not in ("filtered", "skipped")]
 
+    saved_count = sum(1 for l in all_listings if l["status"] == "saved")
+
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "pending": pending,
@@ -131,10 +133,12 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
         "now": datetime.now(timezone.utc),
         "msg": msg,
         "show_skipped": show_skipped,
+        "show_saved": show_saved,
         "min_score": min_score,
         "total": total,
         "filtered_count": filtered_count,
         "skipped_count": skipped_count,
+        "saved_count": saved_count,
         "approved_count": approved_count,
         "applied_count": applied_count,
         "interviewing_count": interviewing_count,

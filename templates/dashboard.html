@@ -46,8 +46,52 @@
         </div>
     </div>
 
-    <!-- Score filter + section title -->
+    <!-- View toggle: normal vs saved -->
     <div class="flex gap-2 items-center mt-6 mb-2">
+        <a href="/dashboard?min_score={{ min_score }}&show_skipped={{ show_skipped }}"
+           style="padding:4px 14px; border-radius:20px; font-size:13px; text-decoration:none; font-weight:500;
+                  {% if not show_saved %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">All matches</a>
+        <a href="/dashboard?show_saved=true&min_score={{ min_score }}&show_skipped={{ show_skipped }}"
+           style="padding:4px 14px; border-radius:20px; font-size:13px; text-decoration:none; font-weight:500;
+                  {% if show_saved %}background:#1d4ed8; color:white;{% else %}background:#f1f5f9; color:#475569;{% endif %}">
+            Saved{% if saved_count > 0 %} ({{ saved_count }}){% endif %}
+        </a>
+    </div>
+
+    {% if show_saved %}
+
+    <!-- Saved for later -->
+    {% set saved_listings = all_listings | selectattr('status', 'equalto', 'saved') | list %}
+    {% if saved_listings %}
+        {% for listing in saved_listings %}
+        {% set score = listing.match_score or 0 %}
+        <div class="card" style="padding:14px 20px;">
+            <div class="flex justify-between items-center">
+                <div class="flex gap-3 items-center">
+                    <div class="score {% if score >= 8 %}score-high{% elif score >= 6 %}score-mid{% else %}score-low{% endif %}"
+                         style="width:36px; height:36px; font-size:14px;">
+                        {{ score }}
+                    </div>
+                    <div>
+                        <p style="font-size:14px; font-weight:500;">{{ listing.title }}</p>
+                        <p class="text-muted">{{ listing.company or '—' }} · {{ listing.location or '—' }}</p>
+                    </div>
+                </div>
+                <a href="/dashboard/listing/{{ listing.id }}" class="btn btn-primary" style="padding:4px 12px; font-size:12px;">Review & Edit →</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="card empty mt-4">
+        <p>No saved listings yet.</p>
+        <p style="margin-top:6px; font-size:12px;">Open a listing and click "Save for later" to bookmark it here.</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+
+    <!-- Score filter + section title -->
+    <div class="flex gap-2 items-center mb-2">
         <span class="section-title" style="margin:0;">Awaiting your decision</span>
         <div style="margin-left:auto; display:flex; gap:6px;">
             <a href="/dashboard?min_score=7&show_skipped={{ show_skipped }}"
@@ -151,6 +195,8 @@
     </div>
     {% endfor %}
     {% endif %}
+
+    {% endif %}{# end show_saved/else #}
 
 </div>
 {% endblock %}
