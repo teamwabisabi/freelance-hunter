@@ -104,7 +104,7 @@ async def root():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, min_score: int = 7, _=Depends(check_auth)):
+async def dashboard(request: Request, msg: str = "", show_skipped: bool = False, min_score: int = 6, _=Depends(check_auth)):
     pending = get_pending_listings(min_score=min_score)
     all_listings = get_all_listings(limit=100)
 
