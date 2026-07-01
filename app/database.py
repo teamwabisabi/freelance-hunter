@@ -126,7 +126,7 @@ def get_all_listings(limit: int = 100) -> list:
         client.table("job_listings")
         .select("*")
         .not_.eq("status", "filtered")
-        .order("match_score", desc=True, nullsfirst=False)
+        .order("collected_at", desc=True)
         .limit(limit)
         .execute()
     )

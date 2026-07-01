@@ -124,6 +124,8 @@ async def dashboard(request: Request, msg: str = "", show_skipped: bool = False,
     else:
         all_listings = [l for l in all_listings if l["status"] not in ("filtered", "skipped")]
 
+    all_listings.sort(key=lambda l: l.get("match_score") or 0, reverse=True)
+
     saved_count = sum(1 for l in all_listings if l["status"] == "saved")
 
     return templates.TemplateResponse("dashboard.html", {
