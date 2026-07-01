@@ -81,6 +81,10 @@
                 {% if listing.url %}
                 <a href="{{ listing.url }}" target="_blank" class="btn btn-gray">View original ↗</a>
                 {% endif %}
+                <form method="post" action="/dashboard/listing/{{ listing.id }}/decide" style="margin:0;">
+                    <input type="hidden" name="action" value="skipped">
+                    <button type="submit" class="btn btn-gray" style="color:#dc2626;">Skip</button>
+                </form>
             </div>
         </div>
         {% endfor %}
