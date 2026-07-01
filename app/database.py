@@ -119,7 +119,7 @@ def get_pending_listings(min_score: int = 7) -> list:
     return result.data
 
 
-def get_all_listings(limit: int = 100) -> list:
+def get_all_listings(limit: int = 500) -> list:
     client = get_client()
     # Get all non-filtered listings, pending ones always included
     result = (
